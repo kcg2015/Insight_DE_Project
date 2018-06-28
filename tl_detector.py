@@ -1,13 +1,10 @@
 '''
 Script to test traffic light localization and detection
-Note: 1) Use gamma correction to improve the detection
-      2) Use image cropped from (unprocessed) original image for classification
 '''
 
 import numpy as np
 import cv2
 import tensorflow as tf
-#from keras.models import load_model
 from PIL import Image
 import os
 from matplotlib import pyplot as plt
@@ -34,20 +31,13 @@ class TLClassifier(object):
         
         #tensorflow localization/classification model
         #************************************************************
-        
-        
-        #detect_model_name = 'traffic_light_inference_graph_site'
-        #detect_model_name = 'tl_inference_may_2018'
-        #detect_model_name ='tl_infer_11710_may_2018'
-        #detect_model_name = 'tl_infer_12729_0518'
-        detect_model_name ='tl_infer_12036_0518'
-        
-            
+        #detect_model_name ='tl_infer_12036_0518'
+        detect_model_name = 'models/version-1.0.0/'
         #************************************************************    
-        
-        #detect_model_name = 'ssd_inception_v2_coco_2017_11_17'
         PATH_TO_CKPT = detect_model_name + '/frozen_inference_graph.pb'
         # setup tensorflow graph
+        
+        self.model_path = None
         self.detection_graph = tf.Graph()
         
         # configuration for possible GPU use
@@ -58,6 +48,7 @@ class TLClassifier(object):
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
             with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
+            #with tf.gfile.GFile(self.model_path, 'rb') as fid:
                serialized_graph = fid.read()
                od_graph_def.ParseFromString(serialized_graph)
                tf.import_graph_def(od_graph_def, name='')
@@ -117,10 +108,7 @@ class TLClassifier(object):
     
               cls = classes.tolist()
               
-              
-        
-             
-              # Find the most confident detection/classification
+             # Find the most confident detection/classification
               idx = 0;
               conf = scores[idx]
               cls_idx = cls[idx]
@@ -168,14 +156,48 @@ class TLClassifier(object):
                       cls_idx = 4.0
                       #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                       print('wrong h-w ratio', ratio)
-                  else:    
+                  else: 
+                       box = box.tolist()
+                       box = [box[1], box[0], box[3], box[2]]
                        print(box)
                        print('localization confidence: ', scores[idx])
                  #****************end of corner cases***********************      
               self.tl_box = box
              
         return box, conf, cls_idx
-        
+
+
+def bytes_to_np_array(message):
+    tmp_np = np.frombuffer(message, dtype=np.uint8)
+    image_np = cv2.imdecode(tmp_np, flags=1)
+    image_np=cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
+    return image_np
+
+def detection_output(message):
+    tl_cls = TLClassifier() 
+    #tl_cls.model_path = model_path
+    #print(tl_cls.model_path)
+    image_np = bytes_to_np_array(message) 
+    box, conf, cls_idx = \
+         tl_cls.get_localization_classification(image_np, visual=False)
+    
+    return (box, conf, cls_idx)        
+
+def box_iou(a, b):
+    '''
+    Helper funciton to calculate the ratio between intersection and the union of
+    two boxes a and b
+    a[0], a[1], a[2], a[3] <-> left, up, right, bottom
+    '''
+    
+    w_intsec = np.maximum (0, (np.minimum(a[2], b[2]) - np.maximum(a[0], b[0])))
+    h_intsec = np.maximum (0, (np.minimum(a[3], b[3]) - np.maximum(a[1], b[1])))
+    s_intsec = w_intsec * h_intsec
+    s_a = (a[2] - a[0])*(a[3] - a[1])
+    s_b = (b[2] - b[0])*(b[3] - b[1])
+  
+    iou = float(s_intsec)/(s_a + s_b -s_intsec)
+    return iou
     
 
 if __name__ == '__main__':

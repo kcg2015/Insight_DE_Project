@@ -26,16 +26,17 @@ def create_database(db_name, tb_name):
         
         cur.execute(sql.SQL("CREATE TABLE IF NOT EXISTS {}(\
                             id INTEGER PRIMARY KEY, \
-                            image_id  VARCHAR(30), \
+                            image_id  VARCHAR(20), \
                             img_w INTEGER,\
                             img_h INTEGER,\
-                            model_name  VARCHAR(30), \
-                            model_ver  VARCHAR(30),\
+                            model_name  VARCHAR(20), \
+                            model_ver  VARCHAR(20),\
                             ts   VARCHAR(30),\
                             det INT[],\
                             label INT[],\
                             iou REAL,\
                             conf REAL,\
+                            color VARCHAR(20), \
                             succ BOOLEAN)").format(sql.Identifier(tb_name)))
  
         con.commit()
@@ -70,7 +71,7 @@ def insert_database(db_name, tb_name, row):
                             values (%s, %s, %s, \
                             %s, %s, %s,\
                             %s, %s, %s,\
-                            %s, %s, %s) on conflict(id) do nothing;")
+                            %s, %s, %s, %s) on conflict(id) do nothing;")
         .format(sql.Identifier(tb_name)), row)  
         con.commit()
     except psycopg2.DatabaseError as e:
