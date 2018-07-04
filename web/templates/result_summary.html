@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Insight DE Project Demo</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body> 
+<div class="container">
+  <h2>Summary</h2>
+  <div class="panel panel-default">
+
+    <div class="panel-body"><font size = "4">{{model1.name}} Accuracy: {{model1_acc.name}}</div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-body">{{model2.name}} Accuracy: {{model2_acc.name}}</div>
+  </div>
+</div>
+
+<div class="container">
+  <h2>Detailed Test Results</h2>
+  <div class="list-group">
+    <a href="{{ url_for('result_db1') }}" class="list-group-item">{{model1.name}}</a>
+    <a href="{{ url_for('result_db2') }}" class="list-group-item">{{model2.name}}</a>
+  </div>
+</div>
+</body>
+</html>
+
+

@@ -1,0 +1,15 @@
+
+bucket_name: "traffic-light-kcguan"
+folder_name_label: "labels/"
+folder_name_image: "images/"
+file_name_label: "test_labels.csv"
+folder_name_model: "models/"
+folder_name_version: "version-1.0.0/"
+download_path: '' 
+db_name: 'test_result_db'
+tb_name: 'result3'
+model_name: 'model1'
+model_version: '1.0.0'
+img_w: 640
+img_h: 480
+num_partition: 100

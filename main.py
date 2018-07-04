@@ -14,8 +14,8 @@ import time
 import datetime
 from s3_util import *  
 import db_util
-#from tl_detector import TLClassifier, box_iou
 from tl_detector import *
+import yaml
 
 if __name__=='__main__': 
      
@@ -23,28 +23,33 @@ if __name__=='__main__':
      aws_access_key = os.getenv('AWS_ACCESS_KEY_ID', 'default')
      aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY', 'default')
 
+     # Open the YAML file that stores the parameters
+     with open("para.yaml", "r") as f:
+           args = yaml.load(f)
+     
      # The bucket and folder information for the test images and 
      #labels
-     bucket_name = "traffic-light-kcguan"
-     folder_name_label = "labels/"
-     folder_name_image = "images/"
-     file_name_label = "test_labels.csv"
+     bucket_name = args['bucket_name']
+     folder_name_label = args['folder_name_label']
+     folder_name_image = args['folder_name_image']
+     file_name_label = args['file_name_label']
      
      # The bucket and folder information for models (pickle or protocol buffer file)
      #model_bucket_name = "models-kcguan"
-     folder_name_model = "models/"
-     folder_name_version = "version-1.0.0/"
+     folder_name_model = args['folder_name_model']
+     folder_name_version = args['folder_name_version']
      folder_name_model_full = folder_name_model + folder_name_version
-     download_path = '' 
+     download_path = args['download_path'] 
      #local_path = download_path + model_folder_name
      
      # Database information
-     db_name = 'test_result_db'
-     tb_name = 'result3'
-     model_name = 'model1'
-     model_version = '1.0.0'
-     img_w = 640
-     img_h = 480
+     db_name = args['db_name']
+     tb_name = args['tb_name']
+     model_name = args['model_name']
+     model_version = args['model_version']
+     img_w = args['img_w']
+     img_h = args['img_h']
+     num_partition = args['num_partition']
      
      
      # Create the database
@@ -73,7 +78,7 @@ if __name__=='__main__':
      sc = pyspark.SparkContext()
     
      #Create an RDD from the list of s3 key names 
-     num_partition = 100;
+     
      file_list_rdd = sc.parallelize(image_file_list, num_partition)
      
      # Lazy evaluation to
@@ -81,10 +86,10 @@ if __name__=='__main__':
      # 2) carry out object detection 
 
      det_output = file_list_rdd.map(lambda x: fetch_data(x, bucket)) \
-                          .map(lambda x: detection_output(x))
+                          .map(lambda x: detection_output(x, folder_name_model_full))
      
      start = time.time()
-     for idx, item in enumerate(det_output.take(no_image_files)):     
+     for idx, item in enumerate(det_output.take(100)):     
           
           
           detected_box = item[0]
@@ -102,21 +107,14 @@ if __name__=='__main__':
           # Get the confidence
           conf = float("{0:.2f}".format(item[1]))
           
-          cls_idx = item[2]
-          if cls_idx ==1.0:
-                 color_str ='Green'
-          elif cls_idx ==2.0:
-                 color_str ='Red'
-          elif cls_idx ==3.0:
-                 color_str ='Yellow'
-          else:
-                 color_str ='Unknown'
+          color_str = item[2]
+
           labeled_color =  label_dict[image_file_name][1]      
           #  If IOU (intersection over union) is larger than a threshold
           #  declare the detection a success        
           success = str((iou >0.6) and (labeled_color == color_str))
           
-          #print(image_file_name, detected_box, labeled_box, iou, conf)
+          
           # Time stamp
           ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
           

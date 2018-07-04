@@ -25,16 +25,17 @@ class TLClassifier(object):
         
         self.tl_box = None
         
-        self.cls_model_no = 1;
+        self.model_dir = 'models/version-1.0.1/'
         
         os.chdir(cwd)
         
         #tensorflow localization/classification model
         #************************************************************
         #detect_model_name ='tl_infer_12036_0518'
-        detect_model_name = 'models/version-1.0.0/'
+        detect_model_name = 'models/version-1.0.1/'
         #************************************************************    
-        PATH_TO_CKPT = detect_model_name + '/frozen_inference_graph.pb'
+        #PATH_TO_CKPT = detect_model_name + 'frozen_inference_graph.pb'
+        PATH_TO_CKPT = self.model_dir + 'frozen_inference_graph.pb'
         # setup tensorflow graph
         
         self.model_path = None
@@ -163,8 +164,19 @@ class TLClassifier(object):
                        print('localization confidence: ', scores[idx])
                  #****************end of corner cases***********************      
               self.tl_box = box
+              if cls_idx ==1.0:
+                 color_str ='Green'
+              elif cls_idx ==2.0:
+                 color_str ='Red'
+              elif cls_idx ==3.0:
+                 color_str ='Yellow'
+              else:
+                 color_str ='Unknown'
+              
+              
+              
              
-        return box, conf, cls_idx
+        return box, conf, color_str
 
 
 def bytes_to_np_array(message):
@@ -173,9 +185,9 @@ def bytes_to_np_array(message):
     image_np=cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
     return image_np
 
-def detection_output(message):
+def detection_output(message, model_dir):
     tl_cls = TLClassifier() 
-    #tl_cls.model_path = model_path
+    tl_cls.model_dir = model_dir
     #print(tl_cls.model_path)
     image_np = bytes_to_np_array(message) 
     box, conf, cls_idx = \
